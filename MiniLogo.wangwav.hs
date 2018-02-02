@@ -123,9 +123,14 @@ optP (Move (x,y) : z) = Move(optE x, optE y): optP z
 optP (Call x args : z) = Call x (callHelper args ) : optP z
 --If it enounters Define
 optP (Define w x y : z) = Define w x (optP y): optP z
+--For anthying else, like pen up/pen down.
+optP (x : z) = x : optP z
 
 
 -- Breaks call list
 callHelper :: [Expr] -> [Expr]
 callHelper [] = []
 callHelper (x : y) = optE x : callHelper y
+
+--Test Case for optP
+test = [Define "test" ["x1","y1","x2","y2"] [Move(V "x1", Add(N 1) (N 2)), Move(V "x2", V "y2")]]
