@@ -32,7 +32,7 @@ data Cmd = Pen Mode
         | Define Macro [Var] Prog
         deriving(Show,Eq)
 
--- Define Line Macro
+    -- Define Line Macro --
 -- Concrete Syntax --
 --      define line (x1,y1,x2,y2){
 --          pen up;
@@ -44,7 +44,9 @@ data Cmd = Pen Mode
 line = [Define "line" ["x1","y1","x2","y2"]
     [Pen Up, Move(V "x1",V "y1"),
     Pen Down, Move(V "x2", V "y2")]]
--- Define Nix Macro
+
+
+    -- Define Nix Macro --
 -- Concrete Syntax --
 --      define nix (x,y,w,h){
 --          line(x, y, x+w, y+h);
@@ -53,7 +55,8 @@ line = [Define "line" ["x1","y1","x2","y2"]
 nix = [Define "nix" ["x","y","w","h"]
     [Call "line" [V "x", V "y",Add (V "x") (V "w") , Add (V "y") (V "h") ] ,
     Call "line" [Add (V "x") (V "y") , V "y", V "x" , Add (V "y") (V "h") ]]]
--- Define Steps function
+
+    -- Define Steps function --
 steps :: Int -> Prog
 --At zero steps don't draw anything
 steps 0 = []
@@ -62,7 +65,9 @@ steps 0 = []
 steps i = steps (i-1) ++ [ Call "line" [N (i-1), N (i-1), N(i-1), N i],
                             Call "line" [ N (i-1), N i, N i, N i]]
 
--- Define macros function
+
+
+    -- Define macros function --
 macros :: Prog->[Macro]
 -- Exit case
 macros [] = []
@@ -73,7 +78,7 @@ macros (Call macs _ : z) = macs : macros z
 -- Finally Print out macro s
 macros (x : z) = macros z
 
--- Define pretty function
+    -- Define pretty function --
 -- Call with putStrLn
 pretty :: Prog -> String
 pretty [] = ""
@@ -95,4 +100,32 @@ prettyE :: Expr -> String
 prettyE (V x) = x
 --Convert integers into strings
 prettyE (N x) = (show x)
+--Convert Add expressions
 prettyE (Add x y) = prettyE x ++ " + " ++ prettyE y
+
+
+--  Extra Credit --
+
+    --Define optE Function--
+optE :: Expr -> Expr
+-- If it finds an add function add the values together
+optE (Add (N a) (N b)) = N (a + b)
+-- Otherwise do nothing
+optE x = x
+
+    --Define optP Function--
+optP :: Prog -> Prog
+--Default case
+optP [] = []
+--If it encounters move
+optP (Move (x,y) : z) = Move(optE x, optE y): optP z
+--If it encounters Call
+optP (Call x args : z) = Call x (callHelper args ) : optP z
+--If it enounters Define
+optP (Define w x y : z) = Define w x (optP y): optP z
+
+
+-- Breaks call list
+callHelper :: [Expr] -> [Expr]
+callHelper [] = []
+callHelper (x : y) = optE x : callHelper y
